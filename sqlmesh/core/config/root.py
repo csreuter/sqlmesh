@@ -35,8 +35,6 @@ class Config(BaseConfig):
         snapshot_ttl: The period of time that a model snapshot that is not a part of any environment should exist before being deleted.
         environment_ttl: The period of time that a development environment should exist before being deleted.
         ignore_patterns: Files that match glob patterns specified in this list are ignored when scanning the project folder.
-        time_column_format: The default format to use for all model time columns. Defaults to %Y-%m-%d.
-            This time format uses python format codes. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes.
         auto_categorize_changes: Indicates whether SQLMesh should attempt to automatically categorize model changes (breaking / non-breaking)
             during plan creation.
         users: A list of users that can be used for approvals/notifications.
@@ -57,7 +55,6 @@ class Config(BaseConfig):
     snapshot_ttl: str = c.DEFAULT_SNAPSHOT_TTL
     environment_ttl: t.Optional[str] = c.DEFAULT_ENVIRONMENT_TTL
     ignore_patterns: t.List[str] = c.IGNORE_PATTERNS
-    time_column_format: str = c.DEFAULT_TIME_COLUMN_FORMAT
     auto_categorize_changes: CategorizerConfig = CategorizerConfig()
     users: t.List[User] = []
     model_defaults: ModelDefaultsConfig = ModelDefaultsConfig()
@@ -145,6 +142,10 @@ class Config(BaseConfig):
     @property
     def dialect(self) -> t.Optional[str]:
         return self.model_defaults.dialect
+
+    @property
+    def time_column_format(self) -> str:
+        return self.model_defaults.time_column_format
 
     @property
     def fingerprint(self) -> str:
