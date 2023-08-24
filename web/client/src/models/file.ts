@@ -44,6 +44,10 @@ export class ModelFile extends ModelArtifact<InitialFile> {
       initial?.content ?? this.initial.content ?? ''
   }
 
+  get shortName(): string {
+    return this.name.replace(this.extension, '')
+  }
+
   get isSynced(): boolean {
     return isFalse(isStringEmptyOrNil(this._content))
   }
