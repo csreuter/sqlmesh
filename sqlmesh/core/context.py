@@ -187,6 +187,11 @@ class ExecutionContext(BaseContext):
         self._engine_adapter = engine_adapter
         self.__model_tables = to_table_mapping(snapshots.values(), is_dev)
 
+        # Enables python models to reference upstream models, e.g. to fetch their metadata
+        self.models = {
+            name: snapshot.node for name, snapshot in snapshots.items() if snapshot.node.is_model
+        }
+
     @property
     def engine_adapter(self) -> EngineAdapter:
         """Returns an engine adapter."""
