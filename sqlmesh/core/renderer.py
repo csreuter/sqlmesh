@@ -69,7 +69,7 @@ class BaseExpressionRenderer:
         self._jinja_macro_registry = jinja_macro_registry or JinjaMacroRegistry()
         self._python_env = python_env or {}
         self._only_execution_time = only_execution_time
-        self._models: UniqueKeyDict[str, Model] = UniqueKeyDict("models")
+        self._models: t.Optional[UniqueKeyDict[str, Model]] = None
 
         self._cache: t.Dict[t.Tuple[datetime, datetime, datetime], t.List[exp.Expression]] = {}
 
@@ -139,8 +139,8 @@ class BaseExpressionRenderer:
                 except Exception as ex:
                     raise ConfigError(f"Invalid expression. {ex} at '{self._path}'") from ex
 
-            if not self._models:
-                self._models = kwargs.get("models") or UniqueKeyDict("models")
+            if not self._models and "models" in kwargs:
+                self._models = kwargs["models"]
 
             macro_evaluator = MacroEvaluator(
                 self._dialect,
