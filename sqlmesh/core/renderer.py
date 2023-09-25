@@ -139,8 +139,8 @@ class BaseExpressionRenderer:
                 except Exception as ex:
                     raise ConfigError(f"Invalid expression. {ex} at '{self._path}'") from ex
 
-            if not self._models and "models" in kwargs:
-                self._models = kwargs["models"]
+            if not self._models:
+                self._models = kwargs.get("models")
 
             macro_evaluator = MacroEvaluator(
                 self._dialect,
