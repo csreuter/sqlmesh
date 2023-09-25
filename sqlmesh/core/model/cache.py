@@ -6,6 +6,7 @@ from pathlib import Path
 from sqlglot import exp
 
 from sqlmesh.core.model.definition import Model, SqlModel
+from sqlmesh.utils import UniqueKeyDict
 from sqlmesh.utils.cache import FileCache
 from sqlmesh.utils.hashing import crc32
 from sqlmesh.utils.pydantic import PydanticModel

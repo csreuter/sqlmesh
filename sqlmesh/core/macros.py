@@ -23,6 +23,9 @@ from sqlmesh.utils.errors import MacroEvalError, SQLMeshError
 from sqlmesh.utils.jinja import JinjaMacroRegistry, has_jinja
 from sqlmesh.utils.metaprogramming import Executable, prepare_env, print_exception
 
+if t.TYPE_CHECKING:
+    from sqlmesh.core.model import Model
+
 
 class MacroStrTemplate(Template):
     delimiter = "@"
@@ -106,7 +109,7 @@ class MacroEvaluator:
         self.python_env = python_env or {}
         self._jinja_env: t.Optional[Environment] = jinja_env
         self.macros = {normalize_macro_name(k): v.func for k, v in macro.get_registry().items()}
-        self.models = models or {}
+        self.models: UniqueKeyDict[str, Model] = models or UniqueKeyDict("models")
 
         prepare_env(self.python_env, self.env)
         for k, v in self.python_env.items():

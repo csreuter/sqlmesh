@@ -33,6 +33,7 @@ from sqlmesh.utils.metaprogramming import Executable, prepare_env
 if t.TYPE_CHECKING:
     from sqlglot._typing import E
 
+    from sqlmesh.core.model import Model
     from sqlmesh.core.snapshot import Snapshot
 
 
@@ -68,7 +69,7 @@ class BaseExpressionRenderer:
         self._jinja_macro_registry = jinja_macro_registry or JinjaMacroRegistry()
         self._python_env = python_env or {}
         self._only_execution_time = only_execution_time
-        self._models: UniqueKeyDict[str, Model] = {}
+        self._models: UniqueKeyDict[str, Model] = UniqueKeyDict("models")
 
         self._cache: t.Dict[t.Tuple[datetime, datetime, datetime], t.List[exp.Expression]] = {}
 
@@ -139,7 +140,7 @@ class BaseExpressionRenderer:
                     raise ConfigError(f"Invalid expression. {ex} at '{self._path}'") from ex
 
             if not self._models:
-                self._models = kwargs.get("models") or {}
+                self._models = kwargs.get("models") or UniqueKeyDict("models")
 
             macro_evaluator = MacroEvaluator(
                 self._dialect,
