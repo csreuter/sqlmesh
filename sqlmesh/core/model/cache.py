@@ -31,7 +31,13 @@ class ModelCache:
             prefix="model_definition",
         )
 
-    def get_or_load(self, name: str, entry_id: str, loader: t.Callable[[], Model]) -> Model:
+    def get_or_load(
+        self,
+        name: str,
+        entry_id: str,
+        loader: t.Callable[[], Model],
+        models: t.Optional[UniqueKeyDict[str, Model]] = None,
+    ) -> Model:
         """Returns an existing cached model definition or loads and caches a new one.
 
         Args:
@@ -52,7 +58,8 @@ class ModelCache:
         loaded_model = loader()
         if isinstance(loaded_model, SqlModel):
             new_entry = SqlModelCacheEntry(
-                model=loaded_model, rendered_query=loaded_model.render_query(optimize=False)
+                model=loaded_model,
+                rendered_query=loaded_model.render_query(optimize=False, models=models),
             )
             self._file_cache.put(name, entry_id, new_entry)
 

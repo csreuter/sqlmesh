@@ -238,17 +238,19 @@ class SqlMeshLoader(Loader):
         Loads all of the models within the model directory with their associated
         audits into a Dict and creates the dag
         """
-        models = self._load_sql_models(macros, jinja_macros)
-        models.update(self._load_external_models())
+        models = self._load_external_models()
+        models.update(self._load_sql_models(macros, jinja_macros, models))
         models.update(self._load_python_models())
 
         return models
 
     def _load_sql_models(
-        self, macros: MacroRegistry, jinja_macros: JinjaMacroRegistry
+        self,
+        macros: MacroRegistry,
+        jinja_macros: JinjaMacroRegistry,
+        models: UniqueKeyDict[str, Model],
     ) -> UniqueKeyDict[str, Model]:
         """Loads the sql models into a Dict"""
-        models: UniqueKeyDict = UniqueKeyDict("models")
         for context_path, config in self._context.configs.items():
             cache = SqlMeshLoader._Cache(self, context_path)
 
@@ -281,7 +283,7 @@ class SqlMeshLoader(Loader):
                         project=config.project,
                     )
 
-                model = cache.get_or_load_model(path, _load)
+                model = cache.get_or_load_model(path, _load, models)
                 models[model.name] = model
 
                 if isinstance(model, SeedModel):
@@ -401,9 +403,17 @@ class SqlMeshLoader(Loader):
 
             self._model_cache = ModelCache(loader._context.path / c.CACHE)
 
-        def get_or_load_model(self, target_path: Path, loader: t.Callable[[], Model]) -> Model:
+        def get_or_load_model(
+            self,
+            target_path: Path,
+            loader: t.Callable[[], Model],
+            models: UniqueKeyDict[str, Model],
+        ) -> Model:
             model = self._model_cache.get_or_load(
-                self._cache_entry_name(target_path), self._model_cache_entry_id(target_path), loader
+                self._cache_entry_name(target_path),
+                self._model_cache_entry_id(target_path),
+                loader,
+                models,
             )
             model._path = target_path
             return model

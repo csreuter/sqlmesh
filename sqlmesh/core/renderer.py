@@ -19,6 +19,7 @@ from sqlglot.schema import MappingSchema
 from sqlmesh.core import constants as c
 from sqlmesh.core import dialect as d
 from sqlmesh.core.macros import MacroEvaluator
+from sqlmesh.utils import UniqueKeyDict
 from sqlmesh.utils.date import TimeLike, date_dict, make_inclusive, to_datetime
 from sqlmesh.utils.errors import (
     ConfigError,
@@ -67,6 +68,7 @@ class BaseExpressionRenderer:
         self._jinja_macro_registry = jinja_macro_registry or JinjaMacroRegistry()
         self._python_env = python_env or {}
         self._only_execution_time = only_execution_time
+        self._models: UniqueKeyDict[str, Model] = {}
 
         self._cache: t.Dict[t.Tuple[datetime, datetime, datetime], t.List[exp.Expression]] = {}
 
@@ -136,10 +138,14 @@ class BaseExpressionRenderer:
                 except Exception as ex:
                     raise ConfigError(f"Invalid expression. {ex} at '{self._path}'") from ex
 
+            if not self._models:
+                self._models = kwargs.get("models") or {}
+
             macro_evaluator = MacroEvaluator(
                 self._dialect,
                 python_env=self._python_env,
                 jinja_env=jinja_env,
+                models=self._models,
             )
 
             for definition in self._macro_definitions:
