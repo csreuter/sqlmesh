@@ -85,6 +85,9 @@ class DbtLoader(Loader):
         cache = DbtLoader._Cache(self, project, macros_max_mtime, yaml_max_mtimes)
 
         logger.debug("Converting models to sqlmesh")
+
+        models.update(self._load_external_models())
+
         # Now that config is rendered, create the sqlmesh models
         for package in project.packages.values():
             context.set_and_render_variables(package.variables, package.name)
@@ -92,11 +95,11 @@ class DbtLoader(Loader):
 
             for model in package_models.values():
                 sqlmesh_model = cache.get_or_load_model(
-                    model.path, lambda: self._to_sqlmesh(model, context)
+                    model.path,
+                    lambda: self._to_sqlmesh(model, context),
+                    models,
                 )
                 models[sqlmesh_model.name] = sqlmesh_model
-
-        models.update(self._load_external_models())
 
         return models
 
@@ -203,9 +206,17 @@ class DbtLoader(Loader):
             cache_path = loader._context.path / c.CACHE / target.name
             self._model_cache = ModelCache(cache_path)
 
-        def get_or_load_model(self, target_path: Path, loader: t.Callable[[], Model]) -> Model:
+        def get_or_load_model(
+            self,
+            target_path: Path,
+            loader: t.Callable[[], Model],
+            models: UniqueKeyDict[str, Model],
+        ) -> Model:
             model = self._model_cache.get_or_load(
-                self._cache_entry_name(target_path), self._cache_entry_id(target_path), loader
+                self._cache_entry_name(target_path),
+                self._cache_entry_id(target_path),
+                loader,
+                models,
             )
             model._path = target_path
             return model
