@@ -126,7 +126,7 @@ class Plan:
         if not self._start and is_dev and forward_only:
             self._start = default_start or yesterday_ds()
 
-        self._end = end if end or not is_dev else (default_end or now())
+        self._end = end or default_end
         self._restate_models = set(restate_models or [])
         self._effective_from: t.Optional[TimeLike] = None
         self._execution_time = execution_time or now()
@@ -138,6 +138,8 @@ class Plan:
 
         self._input_backfill_models = backfill_models
         self._models_to_backfill: t.Optional[t.Set[str]] = None
+
+        self._deployability_index = DeployabilityIndex.all_deployable()
 
         self._refresh_dag_and_ignored_snapshots()
 
@@ -177,7 +179,7 @@ class Plan:
     @property
     def start(self) -> TimeLike:
         """Returns the start of the plan or the earliest date of all snapshots."""
-        if not self.override_start and (self._restate_models or not self._missing_intervals):
+        if not self._start and (self._restate_models or not self._missing_intervals):
             earliest_start = earliest_start_date(self.snapshots)
             earliest_interval_starts = [s.intervals[0][0] for s in self.snapshots if s.intervals]
             return (
@@ -197,10 +199,10 @@ class Plan:
 
     @start.setter
     def start(self, new_start: TimeLike) -> None:
-        self._ensure_valid_date_range(new_start, self._end)
         self._start = new_start
         self.override_start = True
         self.__missing_intervals = None
+        self._ensure_valid_date_range()
         self._refresh_dag_and_ignored_snapshots()
 
     @property
@@ -212,6 +214,7 @@ class Plan:
     def end(self, new_end: TimeLike) -> None:
         self._end = new_end
         self.override_end = True
+        self._ensure_valid_date_range()
         self._refresh_dag_and_ignored_snapshots()
 
     @property
@@ -249,6 +252,11 @@ class Plan:
     def snapshot_mapping(self) -> t.Dict[SnapshotId, Snapshot]:
         """Gets a mapping of snapshot ID to snapshot."""
         return self.__snapshot_mapping or self.context_diff.snapshots
+
+    @property
+    def deployability_index(self) -> DeployabilityIndex:
+        """Returns the snapshot deployability index for this plan."""
+        return self._deployability_index
 
     @property
     def _model_fqn_to_snapshot(self) -> t.Dict[str, Snapshot]:
@@ -471,12 +479,6 @@ class Plan:
                 if new.is_forward_only:
                     new.dev_intervals = new.intervals.copy()
 
-            deployability_index = (
-                DeployabilityIndex.create(self.snapshots)
-                if self.is_dev
-                else DeployabilityIndex.all_deployable()
-            )
-
             self.__missing_intervals = {
                 (snapshot.name, snapshot.version_get_or_generate()): missing
                 for snapshot, missing in missing_intervals(
@@ -485,7 +487,7 @@ class Plan:
                     end=self._end,
                     execution_time=self._execution_time,
                     restatements=self.restatements,
-                    deployability_index=deployability_index,
+                    deployability_index=self.deployability_index,
                     ignore_cron=True,
                 ).items()
             }
@@ -661,10 +663,8 @@ class Plan:
                     else SnapshotChangeCategory.BREAKING
                 )
 
-    def _ensure_valid_date_range(
-        self, start: t.Optional[TimeLike], end: t.Optional[TimeLike]
-    ) -> None:
-        if (start or end) and not self.is_start_and_end_allowed:
+    def _ensure_valid_date_range(self) -> None:
+        if (self.override_start or self.override_end) and not self.is_start_and_end_allowed:
             raise PlanError(
                 "The start and end dates can't be set for a production plan without restatements."
             )
@@ -724,6 +724,9 @@ class Plan:
             self.ignored_snapshot_ids,
         ) = self._build_snapshots_and_dag()
 
+        if self.is_dev:
+            self._deployability_index = DeployabilityIndex.create(self._snapshots)
+
         if self._restate_models and self.new_snapshots:
             raise PlanError(
                 "Model changes and restatements can't be a part of the same plan. "
@@ -745,11 +748,11 @@ class Plan:
                 ).sorted
             }
 
-        self._add_restatements()
         self.__missing_intervals = None
+        self._add_restatements()
 
         self._ensure_new_env_with_changes()
-        self._ensure_valid_date_range(self._start, self._end)
+        self._ensure_valid_date_range()
         self._ensure_no_forward_only_revert()
         self._ensure_no_broken_references()
 
