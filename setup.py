@@ -47,7 +47,7 @@ setup(
         "requests",
         "rich[jupyter]",
         "ruamel.yaml",
-        "sqlglot[rs]~=20.3.0",
+        "sqlglot[rs]~=20.7.1",
     ],
     extras_require={
         "bigquery": [
@@ -62,8 +62,7 @@ setup(
             f"apache-airflow=={os.environ.get('AIRFLOW_VERSION', '2.3.3')}",
             "autoflake==1.7.7",
             "agate==1.6.3",
-            "google-cloud-bigquery",
-            "google-cloud-bigquery-storage",
+            "beautifulsoup4",
             "black==22.6.0",
             "dbt-bigquery; python_version >= '3.8'",
             # Remove once we drop support for Python 3.7
@@ -74,6 +73,8 @@ setup(
             "Faker",
             "freezegun",
             "google-auth",
+            "google-cloud-bigquery",
+            "google-cloud-bigquery-storage",
             "isort==5.10.1",
             "mkdocs-include-markdown-plugin==4.0.3",
             "mkdocs-material==9.0.5",
