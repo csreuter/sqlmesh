@@ -46,21 +46,21 @@ def get_file(
     """Get a file, including its contents."""
     try:
         file_path = Path(path)
-        file = _get_file_with_content(file_path, settings)
+        file = _get_file_with_content(settings.project_path / file_path, str(file_path))
     except FileNotFoundError:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND)
 
     return file
 
 
-@router.post("/{path:path}", response_model=models.File)
+@router.post("/{path:path}", response_model=t.Optional[models.File])
 async def write_file(
     content: str = Body("", embed=True),
     new_path: t.Optional[str] = Body(None, embed=True),
     path: str = Depends(validate_path),
     settings: Settings = Depends(get_settings),
     context: Context = Depends(get_context),
-) -> models.File:
+) -> t.Optional[models.File]:
     """Create, update, or rename a file."""
     path_or_new_path = path
     if new_path:
@@ -86,12 +86,8 @@ async def write_file(
                     ServerSentEvent(event="errors", data=json.dumps(error))
                 )
 
-        full_path.write_text(content, encoding="utf-8")
-
-    content = (settings.project_path / path_or_new_path).read_text()
-    return models.File(
-        name=os.path.basename(path_or_new_path), path=path_or_new_path, content=content
-    )
+        full_path.write_text(content)
+    return None
 
 
 @router.delete("/{path:path}")
@@ -154,6 +150,7 @@ def _get_directory(
 
     directories, files = walk_path(path)
     relative_path = str(Path(path).relative_to(settings.project_path))
+
     return models.Directory(
         name=os.path.basename(path),
         path="" if relative_path == "." else relative_path,
@@ -162,18 +159,10 @@ def _get_directory(
     )
 
 
-def _get_file_with_content(
-    path: Path,
-    settings: Settings,
-) -> models.File:
+def _get_file_with_content(file_path: Path, relative_path: str) -> models.File:
     """Get a file, including its contents."""
-    file_path = settings.project_path / path
-
-    with open(file_path) as f:
-        content = f.read()
-
     return models.File(
-        name=path.name,
-        path=str(path),
-        content=content,
+        name=file_path.name,
+        path=relative_path,
+        content=file_path.read_text(),
     )
