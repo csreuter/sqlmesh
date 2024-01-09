@@ -4,6 +4,7 @@ from datetime import date
 from unittest import mock
 
 import pandas as pd
+import pytest
 from pytest_mock.plugin import MockerFixture
 from sqlglot import expressions as exp
 from sqlglot import parse_one
@@ -16,6 +17,8 @@ from sqlmesh.core.engine_adapter.shared import (
 )
 from sqlmesh.utils.date import to_ds
 from tests.core.engine_adapter import to_sql_calls
+
+pytestmark = [pytest.mark.engine, pytest.mark.mssql]
 
 
 def test_columns(make_mocked_engine_adapter: t.Callable):
@@ -70,7 +73,7 @@ def test_columns(make_mocked_engine_adapter: t.Callable):
     }
 
     adapter.cursor.execute.assert_called_once_with(
-        """SELECT "column_name", "data_type", "character_maximum_length", "numeric_precision", "numeric_scale" FROM "information_schema"."columns" WHERE "table_name" = 'table' AND "table_schema" = 'db';"""
+        """SELECT [column_name], [data_type], [character_maximum_length], [numeric_precision], [numeric_scale] FROM [information_schema].[columns] WHERE [table_name] = 'table' AND [table_schema] = 'db';"""
     )
 
 
@@ -81,8 +84,8 @@ def test_table_exists(make_mocked_engine_adapter: t.Callable):
     resp = adapter.table_exists("db.table")
     adapter.cursor.execute.assert_called_once_with(
         """SELECT 1 """
-        """FROM "information_schema"."tables" """
-        """WHERE "table_name" = 'table' AND "table_schema" = 'db';"""
+        """FROM [information_schema].[tables] """
+        """WHERE [table_name] = 'table' AND [table_schema] = 'db';"""
     )
     assert resp
     adapter.cursor.fetchone.return_value = None
@@ -115,9 +118,9 @@ def test_insert_overwrite_by_time_partition_supports_insert_overwrite_pandas(
         f"__temp_test_table_{temp_table_id}", [(1, "2022-01-01"), (2, "2022-01-02")]
     )
     assert to_sql_calls(adapter) == [
-        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE "__temp_test_table_{temp_table_id}" ("a" INTEGER, "ds" VARCHAR(MAX))');""",
-        f"""MERGE INTO "test_table" AS "__MERGE_TARGET__" USING (SELECT "a" AS "a", "ds" AS "ds" FROM (SELECT CAST("a" AS INTEGER) AS "a", CAST("ds" AS VARCHAR(MAX)) AS "ds" FROM "__temp_test_table_{temp_table_id}") AS "_subquery" WHERE "ds" BETWEEN '2022-01-01' AND '2022-01-02') AS "__MERGE_SOURCE__" ON (1 = 0) WHEN NOT MATCHED BY SOURCE AND "ds" BETWEEN '2022-01-01' AND '2022-01-02' THEN DELETE WHEN NOT MATCHED THEN INSERT ("a", "ds") VALUES ("a", "ds");""",
-        f'DROP TABLE IF EXISTS "__temp_test_table_{temp_table_id}";',
+        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE [__temp_test_table_{temp_table_id}] ([a] INTEGER, [ds] VARCHAR(MAX))');""",
+        f"""MERGE INTO [test_table] AS [__MERGE_TARGET__] USING (SELECT [a] AS [a], [ds] AS [ds] FROM (SELECT CAST([a] AS INTEGER) AS [a], CAST([ds] AS VARCHAR(MAX)) AS [ds] FROM [__temp_test_table_{temp_table_id}]) AS [_subquery] WHERE [ds] BETWEEN '2022-01-01' AND '2022-01-02') AS [__MERGE_SOURCE__] ON (1 = 0) WHEN NOT MATCHED BY SOURCE AND [ds] BETWEEN '2022-01-01' AND '2022-01-02' THEN DELETE WHEN NOT MATCHED THEN INSERT ([a], [ds]) VALUES ([a], [ds]);""",
+        f"DROP TABLE IF EXISTS [__temp_test_table_{temp_table_id}];",
     ]
 
 
@@ -147,9 +150,9 @@ def test_insert_overwrite_by_time_partition_replace_where_pandas(
     )
 
     assert to_sql_calls(adapter) == [
-        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE "__temp_test_table_{temp_table_id}" ("a" INTEGER, "ds" VARCHAR(MAX))');""",
-        f"""MERGE INTO "test_table" AS "__MERGE_TARGET__" USING (SELECT "a" AS "a", "ds" AS "ds" FROM (SELECT CAST("a" AS INTEGER) AS "a", CAST("ds" AS VARCHAR(MAX)) AS "ds" FROM "__temp_test_table_{temp_table_id}") AS "_subquery" WHERE "ds" BETWEEN '2022-01-01' AND '2022-01-02') AS "__MERGE_SOURCE__" ON (1 = 0) WHEN NOT MATCHED BY SOURCE AND "ds" BETWEEN '2022-01-01' AND '2022-01-02' THEN DELETE WHEN NOT MATCHED THEN INSERT ("a", "ds") VALUES ("a", "ds");""",
-        f'DROP TABLE IF EXISTS "__temp_test_table_{temp_table_id}";',
+        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE [__temp_test_table_{temp_table_id}] ([a] INTEGER, [ds] VARCHAR(MAX))');""",
+        f"""MERGE INTO [test_table] AS [__MERGE_TARGET__] USING (SELECT [a] AS [a], [ds] AS [ds] FROM (SELECT CAST([a] AS INTEGER) AS [a], CAST([ds] AS VARCHAR(MAX)) AS [ds] FROM [__temp_test_table_{temp_table_id}]) AS [_subquery] WHERE [ds] BETWEEN '2022-01-01' AND '2022-01-02') AS [__MERGE_SOURCE__] ON (1 = 0) WHEN NOT MATCHED BY SOURCE AND [ds] BETWEEN '2022-01-01' AND '2022-01-02' THEN DELETE WHEN NOT MATCHED THEN INSERT ([a], [ds]) VALUES ([a], [ds]);""",
+        f"DROP TABLE IF EXISTS [__temp_test_table_{temp_table_id}];",
     ]
 
 
@@ -177,9 +180,9 @@ def test_insert_append_pandas(
     )
 
     assert to_sql_calls(adapter) == [
-        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE "__temp_test_table_{temp_table_id}" ("a" INTEGER, "b" INTEGER)');""",
-        f'INSERT INTO "test_table" ("a", "b") SELECT CAST("a" AS INTEGER) AS "a", CAST("b" AS INTEGER) AS "b" FROM "__temp_test_table_{temp_table_id}";',
-        f'DROP TABLE IF EXISTS "__temp_test_table_{temp_table_id}";',
+        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE [__temp_test_table_{temp_table_id}] ([a] INTEGER, [b] INTEGER)');""",
+        f"INSERT INTO [test_table] ([a], [b]) SELECT CAST([a] AS INTEGER) AS [a], CAST([b] AS INTEGER) AS [b] FROM [__temp_test_table_{temp_table_id}];",
+        f"DROP TABLE IF EXISTS [__temp_test_table_{temp_table_id}];",
     ]
 
 
@@ -193,7 +196,7 @@ def test_create_table(make_mocked_engine_adapter: t.Callable):
     adapter.create_table("test_table", columns_to_types)
 
     adapter.cursor.execute.assert_called_once_with(
-        """IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'test_table') EXEC('CREATE TABLE "test_table" ("cola" INTEGER, "colb" VARCHAR(MAX))');"""
+        """IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'test_table') EXEC('CREATE TABLE [test_table] ([cola] INTEGER, [colb] VARCHAR(MAX))');"""
     )
 
 
@@ -212,7 +215,7 @@ def test_create_table_properties(make_mocked_engine_adapter: t.Callable):
     )
 
     adapter.cursor.execute.assert_called_once_with(
-        """IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'test_table') EXEC('CREATE TABLE "test_table" ("cola" INTEGER, "colb" VARCHAR(MAX))');"""
+        """IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'test_table') EXEC('CREATE TABLE [test_table] ([cola] INTEGER, [colb] VARCHAR(MAX))');"""
     )
 
 
@@ -242,9 +245,9 @@ def test_merge_pandas(
     )
 
     assert to_sql_calls(adapter) == [
-        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_target_{temp_table_id}') EXEC('CREATE TABLE "__temp_target_{temp_table_id}" ("id" INTEGER, "ts" DATETIME2, "val" INTEGER)');""",
-        f'MERGE INTO "target" AS "__MERGE_TARGET__" USING (SELECT CAST("id" AS INTEGER) AS "id", CAST("ts" AS DATETIME2) AS "ts", CAST("val" AS INTEGER) AS "val" FROM "__temp_target_{temp_table_id}") AS "__MERGE_SOURCE__" ON "__MERGE_TARGET__"."id" = "__MERGE_SOURCE__"."id" WHEN MATCHED THEN UPDATE SET "__MERGE_TARGET__"."id" = "__MERGE_SOURCE__"."id", "__MERGE_TARGET__"."ts" = "__MERGE_SOURCE__"."ts", "__MERGE_TARGET__"."val" = "__MERGE_SOURCE__"."val" WHEN NOT MATCHED THEN INSERT ("id", "ts", "val") VALUES ("__MERGE_SOURCE__"."id", "__MERGE_SOURCE__"."ts", "__MERGE_SOURCE__"."val");',
-        f'DROP TABLE IF EXISTS "__temp_target_{temp_table_id}";',
+        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_target_{temp_table_id}') EXEC('CREATE TABLE [__temp_target_{temp_table_id}] ([id] INTEGER, [ts] DATETIME2, [val] INTEGER)');""",
+        f"MERGE INTO [target] AS [__MERGE_TARGET__] USING (SELECT CAST([id] AS INTEGER) AS [id], CAST([ts] AS DATETIME2) AS [ts], CAST([val] AS INTEGER) AS [val] FROM [__temp_target_{temp_table_id}]) AS [__MERGE_SOURCE__] ON [__MERGE_TARGET__].[id] = [__MERGE_SOURCE__].[id] WHEN MATCHED THEN UPDATE SET [__MERGE_TARGET__].[id] = [__MERGE_SOURCE__].[id], [__MERGE_TARGET__].[ts] = [__MERGE_SOURCE__].[ts], [__MERGE_TARGET__].[val] = [__MERGE_SOURCE__].[val] WHEN NOT MATCHED THEN INSERT ([id], [ts], [val]) VALUES ([__MERGE_SOURCE__].[id], [__MERGE_SOURCE__].[ts], [__MERGE_SOURCE__].[val]);",
+        f"DROP TABLE IF EXISTS [__temp_target_{temp_table_id}];",
     ]
 
     adapter.cursor.reset_mock()
@@ -265,9 +268,9 @@ def test_merge_pandas(
     )
 
     assert to_sql_calls(adapter) == [
-        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_target_{temp_table_id}') EXEC('CREATE TABLE "__temp_target_{temp_table_id}" ("id" INTEGER, "ts" DATETIME2, "val" INTEGER)');""",
-        f'MERGE INTO "target" AS "__MERGE_TARGET__" USING (SELECT CAST("id" AS INTEGER) AS "id", CAST("ts" AS DATETIME2) AS "ts", CAST("val" AS INTEGER) AS "val" FROM "__temp_target_{temp_table_id}") AS "__MERGE_SOURCE__" ON "__MERGE_TARGET__"."id" = "__MERGE_SOURCE__"."id" AND "__MERGE_TARGET__"."ts" = "__MERGE_SOURCE__"."ts" WHEN MATCHED THEN UPDATE SET "__MERGE_TARGET__"."id" = "__MERGE_SOURCE__"."id", "__MERGE_TARGET__"."ts" = "__MERGE_SOURCE__"."ts", "__MERGE_TARGET__"."val" = "__MERGE_SOURCE__"."val" WHEN NOT MATCHED THEN INSERT ("id", "ts", "val") VALUES ("__MERGE_SOURCE__"."id", "__MERGE_SOURCE__"."ts", "__MERGE_SOURCE__"."val");',
-        f'DROP TABLE IF EXISTS "__temp_target_{temp_table_id}";',
+        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_target_{temp_table_id}') EXEC('CREATE TABLE [__temp_target_{temp_table_id}] ([id] INTEGER, [ts] DATETIME2, [val] INTEGER)');""",
+        f"MERGE INTO [target] AS [__MERGE_TARGET__] USING (SELECT CAST([id] AS INTEGER) AS [id], CAST([ts] AS DATETIME2) AS [ts], CAST([val] AS INTEGER) AS [val] FROM [__temp_target_{temp_table_id}]) AS [__MERGE_SOURCE__] ON [__MERGE_TARGET__].[id] = [__MERGE_SOURCE__].[id] AND [__MERGE_TARGET__].[ts] = [__MERGE_SOURCE__].[ts] WHEN MATCHED THEN UPDATE SET [__MERGE_TARGET__].[id] = [__MERGE_SOURCE__].[id], [__MERGE_TARGET__].[ts] = [__MERGE_SOURCE__].[ts], [__MERGE_TARGET__].[val] = [__MERGE_SOURCE__].[val] WHEN NOT MATCHED THEN INSERT ([id], [ts], [val]) VALUES ([__MERGE_SOURCE__].[id], [__MERGE_SOURCE__].[ts], [__MERGE_SOURCE__].[val]);",
+        f"DROP TABLE IF EXISTS [__temp_target_{temp_table_id}];",
     ]
 
 
@@ -277,9 +280,9 @@ def test_replace_query(make_mocked_engine_adapter: t.Callable):
     adapter.replace_query("test_table", parse_one("SELECT a FROM tbl"), {"a": "int"})
 
     assert to_sql_calls(adapter) == [
-        """SELECT 1 FROM "information_schema"."tables" WHERE "table_name" = 'test_table';""",
-        'TRUNCATE TABLE "test_table"',
-        'INSERT INTO "test_table" ("a") SELECT "a" FROM "tbl";',
+        """SELECT 1 FROM [information_schema].[tables] WHERE [table_name] = 'test_table';""",
+        "TRUNCATE TABLE [test_table]",
+        "INSERT INTO [test_table] ([a]) SELECT [a] FROM [tbl];",
     ]
 
 
@@ -304,11 +307,11 @@ def test_replace_query_pandas(
     )
 
     assert to_sql_calls(adapter) == [
-        """SELECT 1 FROM "information_schema"."tables" WHERE "table_name" = 'test_table';""",
-        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE "__temp_test_table_{temp_table_id}" ("a" INTEGER, "b" INTEGER)');""",
-        'TRUNCATE TABLE "test_table"',
-        f'INSERT INTO "test_table" ("a", "b") SELECT CAST("a" AS INTEGER) AS "a", CAST("b" AS INTEGER) AS "b" FROM "__temp_test_table_{temp_table_id}";',
-        f'DROP TABLE IF EXISTS "__temp_test_table_{temp_table_id}";',
+        """SELECT 1 FROM [information_schema].[tables] WHERE [table_name] = 'test_table';""",
+        f"""IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = '__temp_test_table_{temp_table_id}') EXEC('CREATE TABLE [__temp_test_table_{temp_table_id}] ([a] INTEGER, [b] INTEGER)');""",
+        "TRUNCATE TABLE [test_table]",
+        f"INSERT INTO [test_table] ([a], [b]) SELECT CAST([a] AS INTEGER) AS [a], CAST([b] AS INTEGER) AS [b] FROM [__temp_test_table_{temp_table_id}];",
+        f"DROP TABLE IF EXISTS [__temp_test_table_{temp_table_id}];",
     ]
 
 
@@ -322,7 +325,7 @@ def test_create_table_primary_key(make_mocked_engine_adapter: t.Callable):
     adapter.create_table("test_table", columns_to_types, primary_key=("cola", "colb"))
 
     adapter.cursor.execute.assert_called_once_with(
-        """IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'test_table') EXEC('CREATE TABLE "test_table" ("cola" INTEGER, "colb" VARCHAR(MAX), PRIMARY KEY ("cola", "colb"))');"""
+        """IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'test_table') EXEC('CREATE TABLE [test_table] ([cola] INTEGER, [colb] VARCHAR(MAX), PRIMARY KEY ([cola], [colb]))');"""
     )
 
 
@@ -332,7 +335,7 @@ def test_create_index(make_mocked_engine_adapter: t.Callable):
 
     adapter.create_index("test_table", "test_index", ("cola", "colb"))
     adapter.cursor.execute.assert_called_once_with(
-        """IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = object_id('test_table') AND name = 'test_index') EXEC('CREATE INDEX "test_index" ON "test_table"("cola", "colb")');"""
+        """IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = object_id('test_table') AND name = 'test_index') EXEC('CREATE INDEX [test_index] ON [test_table]([cola], [colb])');"""
     )
 
 
@@ -344,9 +347,9 @@ def test_drop_schema_with_catalog(make_mocked_engine_adapter: t.Callable, mocker
     adapter.drop_schema("catalog.schema")
 
     assert to_sql_calls(adapter) == [
-        'USE "catalog";',
-        'DROP SCHEMA IF EXISTS "schema";',
-        'USE "other_catalog";',
+        "USE [catalog];",
+        "DROP SCHEMA IF EXISTS [schema];",
+        "USE [other_catalog];",
     ]
 
 
@@ -379,7 +382,7 @@ def test_get_data_objects_catalog(make_mocked_engine_adapter: t.Callable, mocker
     ]
 
     assert to_sql_calls(adapter) == [
-        'USE "test_catalog";',
+        "USE [test_catalog];",
         """
             SELECT
                 'test_catalog' AS catalog_name,
@@ -389,7 +392,7 @@ def test_get_data_objects_catalog(make_mocked_engine_adapter: t.Callable, mocker
             FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_SCHEMA LIKE '%test_schema%'
         """,
-        'USE "other_catalog";',
+        "USE [other_catalog];",
     ]
 
 
@@ -409,8 +412,8 @@ def test_drop_schema(make_mocked_engine_adapter: t.Callable):
     adapter.drop_schema("test_schema", cascade=True)
 
     assert to_sql_calls(adapter) == [
-        """DROP VIEW IF EXISTS "test_schema"."test_view";""",
-        """DROP SCHEMA IF EXISTS "test_schema";""",
+        """DROP VIEW IF EXISTS [test_schema].[test_view];""",
+        """DROP SCHEMA IF EXISTS [test_schema];""",
     ]
 
 

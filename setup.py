@@ -47,7 +47,7 @@ setup(
         "requests",
         "rich[jupyter]",
         "ruamel.yaml",
-        "sqlglot[rs]~=20.7.1",
+        "sqlglot[rs]~=20.8.0",
     ],
     extras_require={
         "bigquery": [
@@ -101,9 +101,10 @@ setup(
             "tenacity==8.1.0",
             "types-croniter",
             "types-dateparser",
-            "typing-extensions",
+            "types-python-dateutil",
             "types-pytz",
             "types-requests==2.28.8",
+            "typing-extensions",
         ],
         "dbt": [
             "dbt-core<1.5.0",
