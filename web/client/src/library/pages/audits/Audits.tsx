@@ -19,8 +19,8 @@ export default function PageAudits(): JSX.Element {
       sidebar={
         <div className="flex flex-col w-full h-full">
           <SourceList
-            by="shortName"
-            byName="shortName"
+            by="basename"
+            byName="basename"
             to={EnumRoutes.Audits}
             items={items}
             className="h-full"

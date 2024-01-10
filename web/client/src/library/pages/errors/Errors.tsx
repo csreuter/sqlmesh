@@ -3,23 +3,29 @@ import Page from '../root/Page'
 import SourceList, { SourceListItem } from '@components/sourceList/SourceList'
 import { EnumRoutes } from '~/routes'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { EnumVariant } from '~/types/enum'
+import { EnumSize, EnumVariant } from '~/types/enum'
 import { useEffect, useMemo } from 'react'
-import { isNil, isNotNil } from '@utils/index'
+import { isArrayEmpty, isNil, isNotNil } from '@utils/index'
+import { Button } from '@components/button/Button'
 
 export default function PageErrors(): JSX.Element {
   const navigate = useNavigate()
-  const { errors, removeError } = useIDE()
+
+  const { errors, removeError, clearErrors } = useIDE()
 
   const list = useMemo(() => Array.from(errors).reverse(), [errors])
 
   useEffect(() => {
-    const id = list[0]?.id
-
-    if (isNil(id)) {
-      navigate(EnumRoutes.Errors)
+    if (isArrayEmpty(list)) {
+      setTimeout(() => navigate(EnumRoutes.Ide))
     } else {
-      navigate(EnumRoutes.Errors + '/' + id)
+      const id = list[0]?.id
+
+      if (isNil(id)) {
+        navigate(EnumRoutes.Errors)
+      } else {
+        navigate(EnumRoutes.Errors + '/' + id)
+      }
     }
   }, [list])
 
@@ -34,29 +40,49 @@ export default function PageErrors(): JSX.Element {
   return (
     <Page
       sidebar={
-        <SourceList
-          by="id"
-          byName="key"
-          byDescription="message"
-          to={EnumRoutes.Errors}
-          items={list}
-          types={list.reduce(
-            (acc: Record<string, string>, it) =>
-              Object.assign(acc, { [it.id]: it.status }),
-            {},
+        <>
+          {errors.size > 0 && (
+            <div className="flex justify-end m-1">
+              <Button
+                size={EnumSize.sm}
+                variant={EnumVariant.Neutral}
+                onClick={() => clearErrors()}
+              >
+                Clear All
+              </Button>
+            </div>
           )}
-          listItem={({ id, to, name, description, text, disabled = false }) => (
-            <SourceListItem
-              to={to}
-              name={name}
-              text={text}
-              description={description}
-              variant={EnumVariant.Danger}
-              disabled={disabled}
-              handleDelete={() => handleDelete(id)}
-            />
-          )}
-        />
+          <SourceList
+            by="id"
+            byName="key"
+            byDescription="message"
+            to={EnumRoutes.Errors}
+            items={list}
+            types={list.reduce(
+              (acc: Record<string, string>, it) =>
+                Object.assign(acc, { [it.id]: it.status }),
+              {},
+            )}
+            listItem={({
+              id,
+              to,
+              name,
+              description,
+              text,
+              disabled = false,
+            }) => (
+              <SourceListItem
+                to={to}
+                name={name}
+                text={text}
+                description={description}
+                variant={EnumVariant.Danger}
+                disabled={disabled}
+                handleDelete={() => handleDelete(id)}
+              />
+            )}
+          />
+        </>
       }
       content={<Outlet />}
     />

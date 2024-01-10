@@ -18,7 +18,7 @@ export default function Content(): JSX.Element {
       {isNil(error) ? (
         <NotFound
           link={EnumRoutes.Errors}
-          descritpion={isNil(id) ? undefined : `Error ${id} Does Not Exist`}
+          description={isNil(id) ? undefined : `Error ${id} Does Not Exist`}
           message="Back To Errors"
         />
       ) : (

@@ -29,7 +29,7 @@ export default function Content(): JSX.Element {
       {isNil(environment) ? (
         <NotFound
           link={EnumRoutes.Plan}
-          descritpion={
+          description={
             isNil(environmentName)
               ? undefined
               : `Model ${environmentName} Does Not Exist`

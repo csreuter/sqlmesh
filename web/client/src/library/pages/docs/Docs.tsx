@@ -73,12 +73,7 @@ export default function PageDocs(): JSX.Element {
                   <h3 className="text-lg mb-4">
                     Still Waiting For Models To Load...
                   </h3>
-                  <p>It should take few more seconds.</p>
-                  <p>
-                    If it takes too long, probably, there is a problem with API
-                    response.
-                  </p>
-                  <p>Check if the server is running and refresh.</p>
+                  <p>It usually takes few seconds.</p>
                 </div>
               </div>
             </div>

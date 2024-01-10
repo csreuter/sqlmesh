@@ -1135,6 +1135,7 @@ function GraphControls({ nodes = [] }: { nodes: Node[] }): JSX.Element {
           onSelect={handleSelect}
           className="w-full min-w-[15rem] max-w-[20rem]"
           isFullWidth={true}
+          direction="top"
         />
         <ListboxShow
           options={{

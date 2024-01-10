@@ -28,6 +28,14 @@ from sqlmesh.utils.pydantic import (
 SUPPORTED_EXTENSIONS = {".py", ".sql", ".yaml", ".yml", ".csv"}
 
 
+class Modules(str, enum.Enum):
+    EDITOR = "editor"
+    DOCS = "docs"
+    PLANS = "plans"
+    TESTS = "tests"
+    AUDITS = "audits"
+
+
 class ModelType(str, enum.Enum):
     PYTHON = "python"
     SQL = "sql"
@@ -113,7 +121,7 @@ class Directory(BaseModel):
 class Meta(BaseModel):
     version: str
     has_running_task: bool = False
-    modules: t.List[str] = []
+    modules: t.List[Modules] = []
 
 
 class Reference(BaseModel):

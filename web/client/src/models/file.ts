@@ -44,7 +44,7 @@ export class ModelFile extends ModelArtifact<InitialFile> {
       initial?.content ?? this.initial.content ?? ''
   }
 
-  get shortName(): string {
+  get basename(): string {
     return this.name.replace(this.extension, '')
   }
 

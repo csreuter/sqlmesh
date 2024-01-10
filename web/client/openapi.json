@@ -1248,7 +1248,7 @@
             "default": false
           },
           "modules": {
-            "items": { "type": "string" },
+            "items": { "$ref": "#/components/schemas/Modules" },
             "type": "array",
             "title": "Modules",
             "default": []
@@ -1447,6 +1447,11 @@
         },
         "type": "object",
         "title": "ModelsDiff"
+      },
+      "Modules": {
+        "type": "string",
+        "enum": ["editor", "docs", "plans", "tests", "audits"],
+        "title": "Modules"
       },
       "NodeType": {
         "type": "string",

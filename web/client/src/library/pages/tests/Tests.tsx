@@ -19,8 +19,8 @@ export default function PageTests(): JSX.Element {
       sidebar={
         <div className="flex flex-col w-full h-full">
           <SourceList
-            by="shortName"
-            byName="shortName"
+            by="basename"
+            byName="basename"
             to={EnumRoutes.Tests}
             items={items}
             listItem={({ to, name, description, text, disabled = false }) => (
