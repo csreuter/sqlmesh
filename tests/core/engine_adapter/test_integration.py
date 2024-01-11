@@ -1066,6 +1066,7 @@ def test_scd_type_2(ctx: TestContext):
         valid_to_name="valid_to",
         updated_at_name="updated_at",
         execution_time="2023-01-01",
+        updated_at_as_valid_from=False,
         columns_to_types=input_schema,
     )
     results = ctx.get_metadata_results()
@@ -1125,6 +1126,7 @@ def test_scd_type_2(ctx: TestContext):
         valid_to_name="valid_to",
         updated_at_name="updated_at",
         execution_time="2023-01-05",
+        updated_at_as_valid_from=False,
         columns_to_types=input_schema,
     )
     results = ctx.get_metadata_results()

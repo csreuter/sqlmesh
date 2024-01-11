@@ -1132,6 +1132,7 @@ class EngineAdapter:
         valid_to_name: str,
         updated_at_name: str,
         execution_time: TimeLike,
+        updated_at_as_valid_from: bool = False,
         columns_to_types: t.Optional[t.Dict[str, exp.DataType]] = None,
         table_description: t.Optional[str] = None,
         column_descriptions: t.Optional[t.Dict[str, str]] = None,
@@ -1152,6 +1153,11 @@ class EngineAdapter:
         unmanaged_columns = [
             col for col in columns_to_types if col not in {valid_from_name, valid_to_name}
         ]
+        valid_from_start = (
+            updated_at_name
+            if updated_at_as_valid_from
+            else self._to_utc_timestamp("1970-01-01 00:00:00+00:00")
+        )
         with source_queries[0] as source_query:
             query = (
                 exp.Select()  # type: ignore
@@ -1273,7 +1279,7 @@ class EngineAdapter:
                                     ELSE {updated_at_name}
                                  END
                             WHEN t_{valid_from_name} IS NULL
-                            THEN {self._to_utc_timestamp('1970-01-01 00:00:00+00:00')}
+                            THEN {valid_from_start}
                             ELSE t_{valid_from_name}
                         END AS {valid_from_name}""",
                         f"""

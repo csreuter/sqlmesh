@@ -1147,6 +1147,7 @@ def test_insert_into_scd_type_2(adapter_mock, make_snapshot):
         execution_time="2020-01-02",
         table_description=None,
         column_descriptions={},
+        updated_at_as_valid_from=False,
     )
 
 
