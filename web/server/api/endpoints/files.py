@@ -55,6 +55,7 @@ def get_file(
 
 @router.post("/{path:path}", response_model=t.Optional[models.File])
 async def write_file(
+    response: Response,
     content: str = Body("", embed=True),
     new_path: t.Optional[str] = Body(None, embed=True),
     path: str = Depends(validate_path),
@@ -87,6 +88,9 @@ async def write_file(
                 )
 
         full_path.write_text(content)
+
+    response.status_code = HTTP_204_NO_CONTENT
+
     return None
 
 
