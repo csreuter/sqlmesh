@@ -133,7 +133,7 @@ def test_write_file(project_tmp_path: Path) -> None:
     response = client.post("/api/files/foo.txt", json={"content": "bar"})
     file = _get_file_with_content(project_tmp_path / "foo.txt", "foo.txt")
     assert response.status_code == 204
-    assert file.model_dump() == {
+    assert file.dict() == {
         "name": "foo.txt",
         "path": "foo.txt",
         "extension": ".txt",
@@ -148,7 +148,7 @@ def test_update_file(project_tmp_path: Path) -> None:
     response = client.post("/api/files/foo.txt", json={"content": "baz"})
     file = _get_file_with_content(project_tmp_path / "foo.txt", "foo.txt")
     assert response.status_code == 204
-    assert file.model_dump() == {
+    assert file.dict() == {
         "name": "foo.txt",
         "path": "foo.txt",
         "extension": ".txt",
@@ -163,7 +163,7 @@ def test_rename_file(project_tmp_path: Path) -> None:
     response = client.post("/api/files/foo.txt", json={"new_path": "baz.txt"})
     file = _get_file_with_content(project_tmp_path / "baz.txt", "baz.txt")
     assert response.status_code == 204
-    assert file.model_dump() == {
+    assert file.dict() == {
         "name": "baz.txt",
         "path": "baz.txt",
         "extension": ".txt",
@@ -181,7 +181,7 @@ def test_rename_file_and_keep_content(project_tmp_path: Path) -> None:
     )
     file = _get_file_with_content(project_tmp_path / "baz.txt", "baz.txt")
     assert response.status_code == 204
-    assert file.model_dump() == {
+    assert file.dict() == {
         "name": "baz.txt",
         "path": "baz.txt",
         "extension": ".txt",
@@ -204,7 +204,7 @@ def test_rename_file_already_exists(project_tmp_path: Path) -> None:
     response = client.post("/api/files/foo.txt", json={"new_path": "bar.txt"})
     file = _get_file_with_content(project_tmp_path / "bar.txt", "bar.txt")
     assert response.status_code == 204
-    assert file.model_dump() == {
+    assert file.dict() == {
         "name": "bar.txt",
         "path": "bar.txt",
         "extension": ".txt",
